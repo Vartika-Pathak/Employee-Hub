@@ -10,6 +10,18 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: dashboard
+    description: People operations dashboard
+  - name: employees
+    description: Employee directory and profiles
+  - name: documents
+    description: Employee documents and upload metadata
+  - name: attendance
+    description: Attendance summaries
+  - name: reports
+    description: HR reporting
+  - name: tasks
+    description: Onboarding and people operations tasks
 paths:
   /healthz:
     get:
@@ -24,7 +36,257 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get dashboard summary
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+  /dashboard/activity:
+    get:
+      operationId: getDashboardActivity
+      tags: [dashboard]
+      summary: Get recent people operations activity
+      responses:
+        "200":
+          description: Recent activity
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Activity"
+  /employees:
+    get:
+      operationId: getEmployees
+      tags: [employees]
+      summary: List employees
+      parameters:
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [active, onboarding, on_leave, inactive]
+      responses:
+        "200":
+          description: Employee directory
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Employee"
+    post:
+      operationId: createEmployee
+      tags: [employees]
+      summary: Create an employee
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmployeeInput"
+      responses:
+        "201":
+          description: Created employee
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Employee"
+  /employees/{employeeId}:
+    get:
+      operationId: getEmployee
+      tags: [employees]
+      summary: Get an employee profile
+      parameters:
+        - $ref: "#/components/parameters/EmployeeId"
+      responses:
+        "200":
+          description: Employee profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Employee"
+        "404":
+          description: Employee not found
+    patch:
+      operationId: updateEmployee
+      tags: [employees]
+      summary: Update an employee profile
+      parameters:
+        - $ref: "#/components/parameters/EmployeeId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmployeeUpdate"
+      responses:
+        "200":
+          description: Updated employee
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Employee"
+  /employees/{employeeId}/onboarding:
+    get:
+      operationId: getEmployeeOnboarding
+      tags: [employees]
+      summary: Get onboarding checklist for an employee
+      parameters:
+        - $ref: "#/components/parameters/EmployeeId"
+      responses:
+        "200":
+          description: Onboarding checklist
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OnboardingItem"
+  /employees/{employeeId}/documents:
+    get:
+      operationId: getEmployeeDocuments
+      tags: [documents]
+      summary: List an employee's documents
+      parameters:
+        - $ref: "#/components/parameters/EmployeeId"
+      responses:
+        "200":
+          description: Employee documents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Document"
+    post:
+      operationId: createEmployeeDocument
+      tags: [documents]
+      summary: Add document metadata after upload
+      parameters:
+        - $ref: "#/components/parameters/EmployeeId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DocumentInput"
+      responses:
+        "201":
+          description: Created document
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Document"
+  /attendance/summary:
+    get:
+      operationId: getAttendanceSummary
+      tags: [attendance]
+      summary: Get attendance summary
+      responses:
+        "200":
+          description: Attendance summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttendanceSummary"
+  /reports/summary:
+    get:
+      operationId: getReportsSummary
+      tags: [reports]
+      summary: Get HR report summary
+      responses:
+        "200":
+          description: Report summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportsSummary"
+  /tasks:
+    get:
+      operationId: getTasks
+      tags: [tasks]
+      summary: List people operations tasks
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [todo, in_progress, done]
+      responses:
+        "200":
+          description: Task list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Task"
+    post:
+      operationId: createTask
+      tags: [tasks]
+      summary: Create a task
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaskInput"
+      responses:
+        "201":
+          description: Created task
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+  /tasks/{taskId}:
+    patch:
+      operationId: updateTask
+      tags: [tasks]
+      summary: Update task status
+      parameters:
+        - $ref: "#/components/parameters/TaskId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaskUpdate"
+      responses:
+        "200":
+          description: Updated task
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
 components:
+  parameters:
+    EmployeeId:
+      name: employeeId
+      in: path
+      required: true
+      schema:
+        type: number
+    TaskId:
+      name: taskId
+      in: path
+      required: true
+      schema:
+        type: number
   schemas:
     HealthStatus:
       type: object
@@ -33,4 +295,192 @@ components:
           type: string
       required:
         - status
+    Employee:
+      type: object
+      required: [id, name, email, role, department, location, status, startDate, initials, color]
+      properties:
+        id: { type: number }
+        name: { type: string }
+        email: { type: string }
+        role: { type: string }
+        department: { type: string }
+        location: { type: string }
+        status:
+          type: string
+          enum: [active, onboarding, on_leave, inactive]
+        startDate: { type: string }
+        initials: { type: string }
+        color: { type: string }
+        phone: { type: ["string", "null"] }
+        manager: { type: ["string", "null"] }
+    EmployeeInput:
+      type: object
+      required: [name, email, role, department, location, status, startDate, initials, color]
+      properties:
+        name: { type: string }
+        email: { type: string }
+        role: { type: string }
+        department: { type: string }
+        location: { type: string }
+        status:
+          type: string
+          enum: [active, onboarding, on_leave, inactive]
+        startDate: { type: string }
+        initials: { type: string }
+        color: { type: string }
+        phone: { type: ["string", "null"] }
+        manager: { type: ["string", "null"] }
+    EmployeeUpdate:
+      type: object
+      properties:
+        name: { type: string }
+        email: { type: string }
+        role: { type: string }
+        department: { type: string }
+        location: { type: string }
+        status:
+          type: string
+          enum: [active, onboarding, on_leave, inactive]
+        startDate: { type: string }
+        phone: { type: ["string", "null"] }
+        manager: { type: ["string", "null"] }
+    OnboardingItem:
+      type: object
+      required: [id, title, category, status, dueDate]
+      properties:
+        id: { type: number }
+        title: { type: string }
+        category: { type: string }
+        status:
+          type: string
+          enum: [todo, in_progress, done]
+        dueDate: { type: string }
+    Document:
+      type: object
+      required: [id, employeeId, name, type, size, uploadedAt, status]
+      properties:
+        id: { type: number }
+        employeeId: { type: number }
+        name: { type: string }
+        type: { type: string }
+        size: { type: string }
+        uploadedAt: { type: string }
+        status:
+          type: string
+          enum: [verified, pending, needs_review]
+        objectPath: { type: ["string", "null"] }
+    DocumentInput:
+      type: object
+      required: [name, type, size]
+      properties:
+        name: { type: string }
+        type: { type: string }
+        size: { type: string }
+        objectPath: { type: ["string", "null"] }
+    Activity:
+      type: object
+      required: [id, text, timestamp, kind, initials, color]
+      properties:
+        id: { type: number }
+        text: { type: string }
+        timestamp: { type: string }
+        kind: { type: string }
+        initials: { type: string }
+        color: { type: string }
+    DashboardSummary:
+      type: object
+      required: [totalEmployees, newHires, attendanceRate, openTasks, employeeChange, newHiresChange]
+      properties:
+        totalEmployees: { type: number }
+        newHires: { type: number }
+        attendanceRate: { type: number }
+        openTasks: { type: number }
+        employeeChange: { type: number }
+        newHiresChange: { type: number }
+    AttendanceSummary:
+      type: object
+      required: [rate, present, late, absent, trend]
+      properties:
+        rate: { type: number }
+        present: { type: number }
+        late: { type: number }
+        absent: { type: number }
+        trend:
+          type: array
+          items:
+            $ref: "#/components/schemas/AttendanceDay"
+    AttendanceDay:
+      type: object
+      required: [day, rate]
+      properties:
+        day: { type: string }
+        rate: { type: number }
+    ReportsSummary:
+      type: object
+      required: [headcount, departments, hiring, retention]
+      properties:
+        headcount: { type: number }
+        departments:
+          type: array
+          items:
+            $ref: "#/components/schemas/DepartmentCount"
+        hiring:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReportPoint"
+        retention: { type: number }
+    DepartmentCount:
+      type: object
+      required: [department, count]
+      properties:
+        department: { type: string }
+        count: { type: number }
+    ReportPoint:
+      type: object
+      required: [label, value]
+      properties:
+        label: { type: string }
+        value: { type: number }
+    Task:
+      type: object
+      required: [id, title, assignee, dueDate, status, priority, category]
+      properties:
+        id: { type: number }
+        title: { type: string }
+        assignee: { type: string }
+        dueDate: { type: string }
+        status:
+          type: string
+          enum: [todo, in_progress, done]
+        priority:
+          type: string
+          enum: [low, medium, high]
+        category: { type: string }
+    TaskInput:
+      type: object
+      required: [title, assignee, dueDate, status, priority, category]
+      properties:
+        title: { type: string }
+        assignee: { type: string }
+        dueDate: { type: string }
+        status:
+          type: string
+          enum: [todo, in_progress, done]
+        priority:
+          type: string
+          enum: [low, medium, high]
+        category: { type: string }
+    TaskUpdate:
+      type: object
+      properties:
+        title: { type: string }
+        assignee: { type: string }
+        dueDate: { type: string }
+        status:
+          type: string
+          enum: [todo, in_progress, done]
+        priority:
+          type: string
+          enum: [low, medium, high]
+        category: { type: string }
 

@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "People Ops"
+description = "A responsive human resources management workspace for employee onboarding, profile management, document uploads, attendance, reporting, and task management."
+version = "1.0.0"
+id = "artifacts/people-ops"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 19427
+
+[services.development]
+run = "pnpm --filter @workspace/people-ops run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/people-ops", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/people-ops/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "19427"
+BASE_PATH = "/"
