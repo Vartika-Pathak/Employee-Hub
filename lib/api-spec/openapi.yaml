@@ -18,6 +18,8 @@ tags:
     description: Employee documents and upload metadata
   - name: attendance
     description: Attendance summaries
+  - name: leaves
+    description: Leave requests and approvals
   - name: reports
     description: HR reporting
   - name: tasks
@@ -203,6 +205,75 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AttendanceSummary"
+  /attendance/records:
+    get:
+      operationId: getAttendanceRecords
+      tags: [attendance]
+      summary: Get daily employee attendance records
+      parameters:
+        - name: date
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [present, late, absent, on_leave]
+      responses:
+        "200":
+          description: Attendance records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AttendanceRecord"
+  /leave-requests:
+    get:
+      operationId: getLeaveRequests
+      tags: [leaves]
+      summary: Get employee leave requests
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [pending, approved, rejected]
+      responses:
+        "200":
+          description: Leave requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LeaveRequest"
+  /leave-requests/{leaveId}:
+    patch:
+      operationId: updateLeaveRequest
+      tags: [leaves]
+      summary: Approve or reject a leave request
+      parameters:
+        - $ref: "#/components/parameters/LeaveId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LeaveRequestUpdate"
+      responses:
+        "200":
+          description: Updated leave request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeaveRequest"
+        "404":
+          description: Leave request not found
   /reports/summary:
     get:
       operationId: getReportsSummary
@@ -283,6 +354,12 @@ components:
         type: number
     TaskId:
       name: taskId
+      in: path
+      required: true
+      schema:
+        type: number
+    LeaveId:
+      name: leaveId
       in: path
       required: true
       schema:
@@ -415,6 +492,47 @@ components:
       properties:
         day: { type: string }
         rate: { type: number }
+    AttendanceRecord:
+      type: object
+      required: [id, employeeId, employeeName, initials, color, date, status]
+      properties:
+        id: { type: number }
+        employeeId: { type: number }
+        employeeName: { type: string }
+        initials: { type: string }
+        color: { type: string }
+        date: { type: string }
+        status:
+          type: string
+          enum: [present, late, absent, on_leave]
+        punchIn: { type: ["string", "null"] }
+        punchOut: { type: ["string", "null"] }
+        workedHours: { type: ["string", "null"] }
+    LeaveRequest:
+      type: object
+      required: [id, employeeId, employeeName, initials, color, leaveType, startDate, endDate, days, reason, status, requestedAt]
+      properties:
+        id: { type: number }
+        employeeId: { type: number }
+        employeeName: { type: string }
+        initials: { type: string }
+        color: { type: string }
+        leaveType: { type: string }
+        startDate: { type: string }
+        endDate: { type: string }
+        days: { type: number }
+        reason: { type: string }
+        status:
+          type: string
+          enum: [pending, approved, rejected]
+        requestedAt: { type: string }
+    LeaveRequestUpdate:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [approved, rejected]
     ReportsSummary:
       type: object
       required: [headcount, departments, hiring, retention]

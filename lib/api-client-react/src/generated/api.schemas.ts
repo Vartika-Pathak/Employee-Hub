@@ -163,6 +163,68 @@ export interface AttendanceSummary {
   trend: AttendanceDay[];
 }
 
+export type AttendanceRecordStatus = typeof AttendanceRecordStatus[keyof typeof AttendanceRecordStatus];
+
+
+export const AttendanceRecordStatus = {
+  present: 'present',
+  late: 'late',
+  absent: 'absent',
+  on_leave: 'on_leave',
+} as const;
+
+export interface AttendanceRecord {
+  id: number;
+  employeeId: number;
+  employeeName: string;
+  initials: string;
+  color: string;
+  date: string;
+  status: AttendanceRecordStatus;
+  /** @nullable */
+  punchIn?: string | null;
+  /** @nullable */
+  punchOut?: string | null;
+  /** @nullable */
+  workedHours?: string | null;
+}
+
+export type LeaveRequestStatus = typeof LeaveRequestStatus[keyof typeof LeaveRequestStatus];
+
+
+export const LeaveRequestStatus = {
+  pending: 'pending',
+  approved: 'approved',
+  rejected: 'rejected',
+} as const;
+
+export interface LeaveRequest {
+  id: number;
+  employeeId: number;
+  employeeName: string;
+  initials: string;
+  color: string;
+  leaveType: string;
+  startDate: string;
+  endDate: string;
+  days: number;
+  reason: string;
+  status: LeaveRequestStatus;
+  requestedAt: string;
+}
+
+export type LeaveRequestUpdateStatus = typeof LeaveRequestUpdateStatus[keyof typeof LeaveRequestUpdateStatus];
+
+
+export const LeaveRequestUpdateStatus = {
+  approved: 'approved',
+  rejected: 'rejected',
+} as const;
+
+export interface LeaveRequestUpdate {
+  status: LeaveRequestUpdateStatus;
+}
+
 export interface DepartmentCount {
   department: string;
   count: number;
@@ -275,6 +337,34 @@ export const GetEmployeesStatus = {
   onboarding: 'onboarding',
   on_leave: 'on_leave',
   inactive: 'inactive',
+} as const;
+
+export type GetAttendanceRecordsParams = {
+date?: string;
+status?: GetAttendanceRecordsStatus;
+};
+
+export type GetAttendanceRecordsStatus = typeof GetAttendanceRecordsStatus[keyof typeof GetAttendanceRecordsStatus];
+
+
+export const GetAttendanceRecordsStatus = {
+  present: 'present',
+  late: 'late',
+  absent: 'absent',
+  on_leave: 'on_leave',
+} as const;
+
+export type GetLeaveRequestsParams = {
+status?: GetLeaveRequestsStatus;
+};
+
+export type GetLeaveRequestsStatus = typeof GetLeaveRequestsStatus[keyof typeof GetLeaveRequestsStatus];
+
+
+export const GetLeaveRequestsStatus = {
+  pending: 'pending',
+  approved: 'approved',
+  rejected: 'rejected',
 } as const;
 
 export type GetTasksParams = {

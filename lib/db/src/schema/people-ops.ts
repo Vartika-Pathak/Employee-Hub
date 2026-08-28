@@ -48,15 +48,41 @@ export const tasksTable = pgTable("people_ops_tasks", {
   category: text("category").notNull(),
 });
 
+export const attendanceRecordsTable = pgTable("people_ops_attendance_records", {
+  id: serial("id").primaryKey(),
+  employeeId: integer("employee_id").notNull(),
+  date: date("date", { mode: "string" }).notNull(),
+  status: text("status").notNull(),
+  punchIn: text("punch_in"),
+  punchOut: text("punch_out"),
+  workedHours: text("worked_hours"),
+});
+
+export const leaveRequestsTable = pgTable("people_ops_leave_requests", {
+  id: serial("id").primaryKey(),
+  employeeId: integer("employee_id").notNull(),
+  leaveType: text("leave_type").notNull(),
+  startDate: date("start_date", { mode: "string" }).notNull(),
+  endDate: date("end_date", { mode: "string" }).notNull(),
+  days: integer("days").notNull(),
+  reason: text("reason").notNull(),
+  status: text("status").notNull().default("pending"),
+  requestedAt: timestamp("requested_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const insertEmployeeSchema = createInsertSchema(employeesTable).omit({ id: true, createdAt: true });
 export const insertOnboardingItemSchema = createInsertSchema(onboardingItemsTable).omit({ id: true });
 export const insertDocumentSchema = createInsertSchema(documentsTable).omit({ id: true, uploadedAt: true });
 export const insertTaskSchema = createInsertSchema(tasksTable).omit({ id: true });
+export const insertAttendanceRecordSchema = createInsertSchema(attendanceRecordsTable).omit({ id: true });
+export const insertLeaveRequestSchema = createInsertSchema(leaveRequestsTable).omit({ id: true, requestedAt: true });
 
 export type Employee = typeof employeesTable.$inferSelect;
 export type OnboardingItem = typeof onboardingItemsTable.$inferSelect;
 export type Document = typeof documentsTable.$inferSelect;
 export type Task = typeof tasksTable.$inferSelect;
+export type AttendanceRecord = typeof attendanceRecordsTable.$inferSelect;
+export type LeaveRequest = typeof leaveRequestsTable.$inferSelect;
 export type InsertEmployee = z.infer<typeof insertEmployeeSchema>;
 export type InsertDocument = z.infer<typeof insertDocumentSchema>;
 export type InsertTask = z.infer<typeof insertTaskSchema>;

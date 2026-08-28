@@ -239,6 +239,80 @@ export const GetAttendanceSummaryResponse = zod.object({
 
 
 /**
+ * @summary Get daily employee attendance records
+ */
+export const GetAttendanceRecordsQueryParams = zod.object({
+  "date": zod.coerce.string().optional(),
+  "status": zod.enum(['present', 'late', 'absent', 'on_leave']).optional()
+})
+
+export const GetAttendanceRecordsResponseItem = zod.object({
+  "id": zod.number(),
+  "employeeId": zod.number(),
+  "employeeName": zod.string(),
+  "initials": zod.string(),
+  "color": zod.string(),
+  "date": zod.string(),
+  "status": zod.enum(['present', 'late', 'absent', 'on_leave']),
+  "punchIn": zod.string().nullish(),
+  "punchOut": zod.string().nullish(),
+  "workedHours": zod.string().nullish()
+})
+export const GetAttendanceRecordsResponse = zod.array(GetAttendanceRecordsResponseItem)
+
+
+/**
+ * @summary Get employee leave requests
+ */
+export const GetLeaveRequestsQueryParams = zod.object({
+  "status": zod.enum(['pending', 'approved', 'rejected']).optional()
+})
+
+export const GetLeaveRequestsResponseItem = zod.object({
+  "id": zod.number(),
+  "employeeId": zod.number(),
+  "employeeName": zod.string(),
+  "initials": zod.string(),
+  "color": zod.string(),
+  "leaveType": zod.string(),
+  "startDate": zod.string(),
+  "endDate": zod.string(),
+  "days": zod.number(),
+  "reason": zod.string(),
+  "status": zod.enum(['pending', 'approved', 'rejected']),
+  "requestedAt": zod.string()
+})
+export const GetLeaveRequestsResponse = zod.array(GetLeaveRequestsResponseItem)
+
+
+/**
+ * @summary Approve or reject a leave request
+ */
+export const UpdateLeaveRequestParams = zod.object({
+  "leaveId": zod.coerce.number()
+})
+
+export const UpdateLeaveRequestBody = zod.object({
+  "status": zod.enum(['approved', 'rejected'])
+})
+
+export const UpdateLeaveRequestResponse = zod.object({
+  "id": zod.number(),
+  "employeeId": zod.number(),
+  "employeeName": zod.string(),
+  "initials": zod.string(),
+  "color": zod.string(),
+  "leaveType": zod.string(),
+  "startDate": zod.string(),
+  "endDate": zod.string(),
+  "days": zod.number(),
+  "reason": zod.string(),
+  "status": zod.enum(['pending', 'approved', 'rejected']),
+  "requestedAt": zod.string()
+})
+
+
+/**
  * @summary Get HR report summary
  */
 export const GetReportsSummaryResponse = zod.object({

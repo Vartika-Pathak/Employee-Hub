@@ -1,6 +1,14 @@
 import { and, eq, ilike } from "drizzle-orm";
 import { Router, type IRouter } from "express";
-import { db, documentsTable, employeesTable, onboardingItemsTable, tasksTable } from "@workspace/db";
+import {
+  attendanceRecordsTable,
+  db,
+  documentsTable,
+  employeesTable,
+  leaveRequestsTable,
+  onboardingItemsTable,
+  tasksTable,
+} from "@workspace/db";
 import {
   CreateEmployeeBody,
   CreateEmployeeResponse,
@@ -10,6 +18,8 @@ import {
   CreateTaskBody,
   CreateTaskResponse,
   GetAttendanceSummaryResponse,
+  GetAttendanceRecordsQueryParams,
+  GetAttendanceRecordsResponse,
   GetDashboardActivityResponse,
   GetDashboardSummaryResponse,
   GetEmployeeDocumentsParams,
@@ -20,12 +30,17 @@ import {
   GetEmployeeResponse,
   GetEmployeesQueryParams,
   GetEmployeesResponse,
+  GetLeaveRequestsQueryParams,
+  GetLeaveRequestsResponse,
   GetReportsSummaryResponse,
   GetTasksQueryParams,
   GetTasksResponse,
   UpdateEmployeeBody,
   UpdateEmployeeParams,
   UpdateEmployeeResponse,
+  UpdateLeaveRequestBody,
+  UpdateLeaveRequestParams,
+  UpdateLeaveRequestResponse,
   UpdateTaskBody,
   UpdateTaskParams,
   UpdateTaskResponse,
@@ -54,25 +69,47 @@ async function ensureSeeded(): Promise<void> {
   if (!seedPromise) {
     seedPromise = (async () => {
       const existing = await db.select({ id: employeesTable.id }).from(employeesTable).limit(1);
-      if (existing.length > 0) return;
-      const inserted = await db.insert(employeesTable).values(people).returning({ id: employeesTable.id });
-      const onboarding = inserted.flatMap((employee, index) => [
-        { employeeId: employee.id, title: "Complete personal details", category: "Profile", status: index === 4 ? "in_progress" : "done", dueDate: "2024-06-03" },
-        { employeeId: employee.id, title: "Upload identity document", category: "Documents", status: index === 4 ? "todo" : "done", dueDate: "2024-06-05" },
-        { employeeId: employee.id, title: "Meet your manager", category: "Connections", status: index === 4 ? "todo" : "done", dueDate: "2024-06-07" },
-      ]);
-      await db.insert(onboardingItemsTable).values(onboarding);
-      await db.insert(documentsTable).values([
-        { employeeId: inserted[0].id, name: "Tax declaration 2024.pdf", type: "PDF", size: "1.2 MB", status: "verified", objectPath: null },
-        { employeeId: inserted[0].id, name: "Passport copy.pdf", type: "PDF", size: "840 KB", status: "verified", objectPath: null },
-        { employeeId: inserted[4].id, name: "Offer letter.pdf", type: "PDF", size: "624 KB", status: "pending", objectPath: null },
-      ]);
-      await db.insert(tasksTable).values([
-        { title: "Review Noah's identity documents", assignee: "Elena Rossi", dueDate: "2024-06-05", status: "in_progress", priority: "high", category: "Onboarding" },
-        { title: "Schedule June manager check-ins", assignee: "Maya Chen", dueDate: "2024-06-07", status: "todo", priority: "medium", category: "People" },
-        { title: "Share quarterly headcount report", assignee: "Elena Rossi", dueDate: "2024-06-04", status: "done", priority: "low", category: "Reporting" },
-        { title: "Collect updated emergency contacts", assignee: "Elena Rossi", dueDate: "2024-06-12", status: "todo", priority: "medium", category: "Compliance" },
-      ]);
+      let employeeRows = existing;
+      if (existing.length === 0) {
+        const inserted = await db.insert(employeesTable).values(people).returning({ id: employeesTable.id });
+        employeeRows = inserted;
+        const onboarding = inserted.flatMap((employee, index) => [
+          { employeeId: employee.id, title: "Complete personal details", category: "Profile", status: index === 4 ? "in_progress" : "done", dueDate: "2024-06-03" },
+          { employeeId: employee.id, title: "Upload identity document", category: "Documents", status: index === 4 ? "todo" : "done", dueDate: "2024-06-05" },
+          { employeeId: employee.id, title: "Meet your manager", category: "Connections", status: index === 4 ? "todo" : "done", dueDate: "2024-06-07" },
+        ]);
+        await db.insert(onboardingItemsTable).values(onboarding);
+        await db.insert(documentsTable).values([
+          { employeeId: inserted[0].id, name: "Tax declaration 2024.pdf", type: "PDF", size: "1.2 MB", status: "verified", objectPath: null },
+          { employeeId: inserted[0].id, name: "Passport copy.pdf", type: "PDF", size: "840 KB", status: "verified", objectPath: null },
+          { employeeId: inserted[4].id, name: "Offer letter.pdf", type: "PDF", size: "624 KB", status: "pending", objectPath: null },
+        ]);
+        await db.insert(tasksTable).values([
+          { title: "Review Noah's identity documents", assignee: "Elena Rossi", dueDate: "2024-06-05", status: "in_progress", priority: "high", category: "Onboarding" },
+          { title: "Schedule June manager check-ins", assignee: "Maya Chen", dueDate: "2024-06-07", status: "todo", priority: "medium", category: "People" },
+          { title: "Share quarterly headcount report", assignee: "Elena Rossi", dueDate: "2024-06-04", status: "done", priority: "low", category: "Reporting" },
+          { title: "Collect updated emergency contacts", assignee: "Elena Rossi", dueDate: "2024-06-12", status: "todo", priority: "medium", category: "Compliance" },
+        ]);
+      }
+      const attendanceExisting = await db.select({ id: attendanceRecordsTable.id }).from(attendanceRecordsTable).limit(1);
+      if (attendanceExisting.length === 0) {
+        await db.insert(attendanceRecordsTable).values([
+          { employeeId: employeeRows[0].id, date: "2024-06-03", status: "present", punchIn: "08:54", punchOut: "17:42", workedHours: "8h 48m" },
+          { employeeId: employeeRows[1].id, date: "2024-06-03", status: "late", punchIn: "09:26", punchOut: "18:10", workedHours: "8h 44m" },
+          { employeeId: employeeRows[2].id, date: "2024-06-03", status: "present", punchIn: "08:47", punchOut: "17:31", workedHours: "8h 44m" },
+          { employeeId: employeeRows[3].id, date: "2024-06-03", status: "on_leave", punchIn: null, punchOut: null, workedHours: null },
+          { employeeId: employeeRows[4].id, date: "2024-06-03", status: "absent", punchIn: null, punchOut: null, workedHours: null },
+          { employeeId: employeeRows[5].id, date: "2024-06-03", status: "present", punchIn: "09:02", punchOut: "17:55", workedHours: "8h 53m" },
+        ]);
+      }
+      const leaveExisting = await db.select({ id: leaveRequestsTable.id }).from(leaveRequestsTable).limit(1);
+      if (leaveExisting.length === 0) {
+        await db.insert(leaveRequestsTable).values([
+          { employeeId: employeeRows[3].id, leaveType: "Annual leave", startDate: "2024-06-10", endDate: "2024-06-12", days: 3, reason: "Family visit", status: "pending" },
+          { employeeId: employeeRows[1].id, leaveType: "Medical leave", startDate: "2024-06-17", endDate: "2024-06-17", days: 1, reason: "Doctor appointment", status: "pending" },
+          { employeeId: employeeRows[0].id, leaveType: "Annual leave", startDate: "2024-05-27", endDate: "2024-05-28", days: 2, reason: "Short break", status: "approved" },
+        ]);
+      }
     })();
   }
   await seedPromise;
@@ -201,6 +238,109 @@ router.get("/attendance/summary", (_req, res): void => {
       { day: "Mon", rate: 95.8 }, { day: "Tue", rate: 97.1 }, { day: "Wed", rate: 96.4 },
       { day: "Thu", rate: 95.2 }, { day: "Fri", rate: 96.2 },
     ],
+  }));
+});
+
+router.get("/attendance/records", async (req, res): Promise<void> => {
+  await ensureSeeded();
+  const parsed = GetAttendanceRecordsQueryParams.safeParse(req.query);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+  const conditions = [];
+  if (parsed.data.date) conditions.push(eq(attendanceRecordsTable.date, parsed.data.date));
+  if (parsed.data.status) conditions.push(eq(attendanceRecordsTable.status, parsed.data.status));
+  const records = await db
+    .select({
+      id: attendanceRecordsTable.id,
+      employeeId: employeesTable.id,
+      employeeName: employeesTable.name,
+      initials: employeesTable.initials,
+      color: employeesTable.color,
+      date: attendanceRecordsTable.date,
+      status: attendanceRecordsTable.status,
+      punchIn: attendanceRecordsTable.punchIn,
+      punchOut: attendanceRecordsTable.punchOut,
+      workedHours: attendanceRecordsTable.workedHours,
+    })
+    .from(attendanceRecordsTable)
+    .innerJoin(employeesTable, eq(attendanceRecordsTable.employeeId, employeesTable.id))
+    .where(conditions.length ? and(...conditions) : undefined)
+    .orderBy(employeesTable.name);
+  res.json(GetAttendanceRecordsResponse.parse(records));
+});
+
+router.get("/leave-requests", async (req, res): Promise<void> => {
+  await ensureSeeded();
+  const parsed = GetLeaveRequestsQueryParams.safeParse(req.query);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+  const requests = await db
+    .select({
+      id: leaveRequestsTable.id,
+      employeeId: employeesTable.id,
+      employeeName: employeesTable.name,
+      initials: employeesTable.initials,
+      color: employeesTable.color,
+      leaveType: leaveRequestsTable.leaveType,
+      startDate: leaveRequestsTable.startDate,
+      endDate: leaveRequestsTable.endDate,
+      days: leaveRequestsTable.days,
+      reason: leaveRequestsTable.reason,
+      status: leaveRequestsTable.status,
+      requestedAt: leaveRequestsTable.requestedAt,
+    })
+    .from(leaveRequestsTable)
+    .innerJoin(employeesTable, eq(leaveRequestsTable.employeeId, employeesTable.id))
+    .where(parsed.data.status ? eq(leaveRequestsTable.status, parsed.data.status) : undefined)
+    .orderBy(leaveRequestsTable.requestedAt);
+  res.json(GetLeaveRequestsResponse.parse(requests.map((request) => ({
+    ...request,
+    requestedAt: request.requestedAt.toISOString(),
+  }))));
+});
+
+router.patch("/leave-requests/:leaveId", async (req, res): Promise<void> => {
+  await ensureSeeded();
+  const params = UpdateLeaveRequestParams.safeParse(req.params);
+  const body = UpdateLeaveRequestBody.safeParse(req.body);
+  if (!params.success || !body.success) {
+    res.status(400).json({ error: !params.success ? params.error.message : body.error?.message ?? "Invalid request body" });
+    return;
+  }
+  const [updated] = await db
+    .update(leaveRequestsTable)
+    .set({ status: body.data.status })
+    .where(eq(leaveRequestsTable.id, params.data.leaveId))
+    .returning({ id: leaveRequestsTable.id });
+  if (!updated) {
+    res.status(404).json({ error: "Leave request not found" });
+    return;
+  }
+  const [request] = await db
+    .select({
+      id: leaveRequestsTable.id,
+      employeeId: employeesTable.id,
+      employeeName: employeesTable.name,
+      initials: employeesTable.initials,
+      color: employeesTable.color,
+      leaveType: leaveRequestsTable.leaveType,
+      startDate: leaveRequestsTable.startDate,
+      endDate: leaveRequestsTable.endDate,
+      days: leaveRequestsTable.days,
+      reason: leaveRequestsTable.reason,
+      status: leaveRequestsTable.status,
+      requestedAt: leaveRequestsTable.requestedAt,
+    })
+    .from(leaveRequestsTable)
+    .innerJoin(employeesTable, eq(leaveRequestsTable.employeeId, employeesTable.id))
+    .where(eq(leaveRequestsTable.id, params.data.leaveId));
+  res.json(UpdateLeaveRequestResponse.parse({
+    ...request,
+    requestedAt: request.requestedAt.toISOString(),
   }));
 });
 
