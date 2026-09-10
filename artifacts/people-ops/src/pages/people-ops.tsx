@@ -4,25 +4,28 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Link, useLocation, useParams } from 'wouter';
 import {
   getGetEmployeeDocumentsQueryKey,
+  useCreateEmployeeDocument,
+  useGetEmployeeDocuments,
+  useGetEmployeeOnboarding,
+} from '@workspace/api-client-react';
+import type { Document, OnboardingItem } from '@workspace/api-client-react';
+import {
   getGetEmployeeQueryKey,
   getGetEmployeesQueryKey,
   getGetTasksQueryKey,
   useCreateEmployee,
-  useCreateEmployeeDocument,
   useCreateTask,
   useGetAttendanceSummary,
   useGetDashboardActivity,
   useGetDashboardSummary,
   useGetEmployee,
-  useGetEmployeeDocuments,
-  useGetEmployeeOnboarding,
   useGetEmployees,
   useGetReportsSummary,
   useGetTasks,
   useUpdateEmployee,
   useUpdateTask,
-} from '@workspace/api-client-react';
-import type { Activity, AttendanceSummary, DashboardSummary, Document, Employee, OnboardingItem, ReportsSummary, Task } from '@workspace/api-client-react';
+} from '@/lib/springApi';
+import type { Activity, AttendanceSummary, DashboardSummary, Employee, ReportsSummary, Task } from '@/lib/springApi';
 
 const cn = (...classes: Array<string | false | null | undefined>) => classes.filter(Boolean).join(' ');
 const formatDate = (value?: string | null) => value ? new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(value)) : '—';
@@ -44,7 +47,7 @@ function SectionTitle({ eyebrow, title, action }: { eyebrow?: string; title: str
 }
 
 function LoadingBlock({ className = '' }: { className?: string }) { return <div className={cn('animate-pulse rounded-[14px] bg-muted/80', className)} data-testid="loading-skeleton" />; }
-function ErrorState({ onRetry }: { onRetry?: () => void }) { return <div className="rounded-[14px] border border-destructive/20 bg-destructive/5 p-6 text-center" data-testid="state-error"><CircleAlert className="mx-auto mb-2 text-destructive" size={22} /><p className="text-sm font-semibold">We couldn’t load this view.</p><p className="mt-1 text-xs text-muted-foreground">Try again in a moment.</p>{onRetry && <button onClick={onRetry} className="mt-4 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground" data-testid="button-retry">Retry</button>}</div>; }
+function ErrorState({ onRetry }: { onRetry?: () => void }) { return <div className="rounded-[14px] border border-destructive/20 bg-destructive/5 p-6 text-center" data-testid="state-error"><CircleAlert className="mx-auto mb-2 text-destructive" size={22} /><p className="text-sm font-semibold">We couldn't load this view.</p><p className="mt-1 text-xs text-muted-foreground">Try again in a moment.</p>{onRetry && <button onClick={onRetry} className="mt-4 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground" data-testid="button-retry">Retry</button>}</div>; }
 function EmptyState({ title, detail, action }: { title: string; detail: string; action?: React.ReactNode }) { return <div className="grid min-h-[190px] place-items-center rounded-[14px] border border-dashed border-border bg-card/50 p-8 text-center" data-testid="state-empty"><div><span className="mx-auto mb-3 grid h-9 w-9 place-items-center rounded-full bg-secondary/35 text-primary"><Sparkles size={16} /></span><p className="text-sm font-semibold">{title}</p><p className="mx-auto mt-1 max-w-sm text-xs leading-5 text-muted-foreground">{detail}</p>{action}</div></div>; }
 
 function StatCard({ label, value, change, icon: Icon, tint = 'teal' }: { label: string; value: string | number; change?: number; icon: typeof UsersRound; tint?: 'teal' | 'gold' | 'coral' | 'ink' }) {
@@ -69,7 +72,7 @@ function Overview() {
   const tasks = (tasksQuery.data as Task[] | undefined) ?? [];
   const activity = (activityQuery.data as Activity[] | undefined) ?? [];
   return <div className="space-y-8">
-    <div className="stagger-in flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><p className="font-data text-[10px] uppercase tracking-[.2em] text-primary">Tuesday · October 8, 2024</p><h2 className="mt-2 font-display text-[34px] leading-[1.05] tracking-[-.045em] sm:text-[42px]">Good morning, Avery<span className="text-accent">.</span></h2><p className="mt-3 max-w-lg text-[13px] leading-6 text-muted-foreground">Here’s the pulse of your people team. A few moments need your attention today.</p></div><Link href="/employees" className="inline-flex w-fit items-center gap-2 rounded-[10px] bg-primary px-4 py-2.5 text-[12px] font-semibold text-primary-foreground transition-transform hover:-translate-y-0.5" data-testid="link-view-people"><UsersRound size={15} /> View people</Link></div>
+    <div className="stagger-in flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><p className="font-data text-[10px] uppercase tracking-[.2em] text-primary">Tuesday · October 8, 2024</p><h2 className="mt-2 font-display text-[34px] leading-[1.05] tracking-[-.045em] sm:text-[42px]">Good morning, Avery<span className="text-accent">.</span></h2><p className="mt-3 max-w-lg text-[13px] leading-6 text-muted-foreground">Here's the pulse of your people team. A few moments need your attention today.</p></div><Link href="/employees" className="inline-flex w-fit items-center gap-2 rounded-[10px] bg-primary px-4 py-2.5 text-[12px] font-semibold text-primary-foreground transition-transform hover:-translate-y-0.5" data-testid="link-view-people"><UsersRound size={15} /> View people</Link></div>
     {summaryQuery.isLoading ? <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{[1,2,3,4].map((x) => <LoadingBlock className="h-[150px]" key={x} />)}</div> : summaryQuery.isError ? <ErrorState onRetry={() => summaryQuery.refetch()} /> : <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 stagger-in stagger-1">
       <StatCard label="Total people" value={summary?.totalEmployees ?? '—'} change={summary?.employeeChange} icon={UsersRound} tint="teal" /><StatCard label="New hires" value={summary?.newHires ?? '—'} change={summary?.newHiresChange} icon={Sparkles} tint="gold" /><StatCard label="Attendance rate" value={summary ? `${summary.attendanceRate}%` : '—'} icon={CalendarDays} tint="coral" /><StatCard label="Open tasks" value={summary?.openTasks ?? '—'} icon={CheckCircle2} tint="ink" />
     </div>}
