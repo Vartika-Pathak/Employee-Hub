@@ -1,6 +1,19 @@
 import { useQuery, useMutation } from '@tanstack/react-query';
 
 const BASE_URL = 'http://localhost:8080';
+const TOKEN_KEY = 'authToken';
+
+export function getToken(): string | null {
+  return localStorage.getItem(TOKEN_KEY);
+}
+
+export function setToken(token: string) {
+  localStorage.setItem(TOKEN_KEY, token);
+}
+
+export function clearToken() {
+  localStorage.removeItem(TOKEN_KEY);
+}
 
 export type Employee = {
   id: number;
@@ -18,8 +31,12 @@ export type Employee = {
 };
 
 async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
+  const token = getToken();
   const res = await fetch(url, {
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
     ...options,
   });
   if (!res.ok) {
@@ -241,5 +258,25 @@ export function useGetEmployeeOnboarding(employeeId: number) {
     queryKey: ['employee-onboarding', employeeId],
     queryFn: () => fetchJson<OnboardingItem[]>(`${BASE_URL}/employees/${employeeId}/onboarding`),
     enabled: !!employeeId,
+  });
+}
+
+export function useLogin() {
+  return useMutation({
+    mutationFn: (variables: { username: string; password: string }) =>
+      fetchJson<{ token: string; username: string }>(`${BASE_URL}/auth/login`, {
+        method: 'POST',
+        body: JSON.stringify(variables),
+      }),
+  });
+}
+
+export function useRegister() {
+  return useMutation({
+    mutationFn: (variables: { username: string; password: string }) =>
+      fetchJson<{ token: string; username: string }>(`${BASE_URL}/auth/register`, {
+        method: 'POST',
+        body: JSON.stringify(variables),
+      }),
   });
 }
