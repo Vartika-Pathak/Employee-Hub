@@ -196,3 +196,50 @@ export function useGetReportsSummary() {
     queryFn: () => fetchJson<ReportsSummary>(`${BASE_URL}/reports/summary`),
   });
 }
+
+export type Document = {
+  id: number;
+  name: string;
+  type: string;
+  size: string;
+  objectPath?: string | null;
+  status?: string | null;
+};
+
+export function getGetEmployeeDocumentsQueryKey(employeeId: number) {
+  return ['employee-documents', employeeId];
+}
+
+export function useGetEmployeeDocuments(employeeId: number) {
+  return useQuery({
+    queryKey: getGetEmployeeDocumentsQueryKey(employeeId),
+    queryFn: () => fetchJson<Document[]>(`${BASE_URL}/employees/${employeeId}/documents`),
+    enabled: !!employeeId,
+  });
+}
+
+export function useCreateEmployeeDocument() {
+  return useMutation({
+    mutationFn: (variables: { employeeId: number; data: Partial<Document> }) =>
+      fetchJson<Document>(`${BASE_URL}/employees/${variables.employeeId}/documents`, {
+        method: 'POST',
+        body: JSON.stringify(variables.data),
+      }),
+  });
+}
+
+export type OnboardingItem = {
+  id: number;
+  title: string;
+  category: string;
+  dueDate?: string | null;
+  status?: string | null;
+};
+
+export function useGetEmployeeOnboarding(employeeId: number) {
+  return useQuery({
+    queryKey: ['employee-onboarding', employeeId],
+    queryFn: () => fetchJson<OnboardingItem[]>(`${BASE_URL}/employees/${employeeId}/onboarding`),
+    enabled: !!employeeId,
+  });
+}

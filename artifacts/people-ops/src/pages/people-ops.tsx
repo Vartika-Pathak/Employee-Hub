@@ -4,28 +4,25 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Link, useLocation, useParams } from 'wouter';
 import {
   getGetEmployeeDocumentsQueryKey,
-  useCreateEmployeeDocument,
-  useGetEmployeeDocuments,
-  useGetEmployeeOnboarding,
-} from '@workspace/api-client-react';
-import type { Document, OnboardingItem } from '@workspace/api-client-react';
-import {
   getGetEmployeeQueryKey,
   getGetEmployeesQueryKey,
   getGetTasksQueryKey,
   useCreateEmployee,
+  useCreateEmployeeDocument,
   useCreateTask,
   useGetAttendanceSummary,
   useGetDashboardActivity,
   useGetDashboardSummary,
   useGetEmployee,
+  useGetEmployeeDocuments,
+  useGetEmployeeOnboarding,
   useGetEmployees,
   useGetReportsSummary,
   useGetTasks,
   useUpdateEmployee,
   useUpdateTask,
 } from '@/lib/springApi';
-import type { Activity, AttendanceSummary, DashboardSummary, Employee, ReportsSummary, Task } from '@/lib/springApi';
+import type { Activity, AttendanceSummary, DashboardSummary, Document, Employee, OnboardingItem, ReportsSummary, Task } from '@/lib/springApi';
 
 const cn = (...classes: Array<string | false | null | undefined>) => classes.filter(Boolean).join(' ');
 const formatDate = (value?: string | null) => value ? new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(value)) : '—';
