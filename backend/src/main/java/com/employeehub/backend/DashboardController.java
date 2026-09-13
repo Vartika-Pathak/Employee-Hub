@@ -4,7 +4,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping; 
 import org.springframework.web.bind.annotation.RestController; 
 import java.time.LocalDate; 
-import java.util.List; 
+import java.util.List;
+import java.time.Duration; 
+import java.time.LocalDateTime;
 
 @RestController 
 @RequestMapping("/dashboard") 
@@ -17,7 +19,11 @@ public class DashboardController {
     private TaskRepository taskRepository; 
     
     @Autowired 
-    private AttendanceRepository attendanceRepository; 
+    private AttendanceRepository attendanceRepository;
+
+    @Autowired 
+    private ActivityLogRepository activityLogRepository;
+
     
     @GetMapping("/summary") 
     public SummaryDtos.DashboardSummary getSummary() { 
@@ -33,6 +39,23 @@ public class DashboardController {
     
     @GetMapping("/activity") 
     public List<SummaryDtos.Activity> getActivity() { 
-        return List.of(); 
-    } 
+        return activityLogRepository.findTop10ByOrderByCreatedAtDesc().stream() .map(a -> new SummaryDtos.Activity( 
+            a.getId(), 
+            a.getInitials(), 
+            a.getColor(), 
+            a.getText(), 
+            formatRelativeTime(a.getCreatedAt()), 
+            a.getKind() )) .toList(); 
+        } 
+        
+        private String formatRelativeTime(LocalDateTime time) { 
+            Duration duration = Duration.between(time, LocalDateTime.now()); 
+            long minutes = duration.toMinutes(); 
+            if (minutes < 1) return "just now"; 
+            if (minutes < 60) return minutes + "m ago"; 
+            long hours = duration.toHours(); 
+            if (hours < 24) return hours + "h ago"; 
+            long days = duration.toDays(); 
+            return days + "d ago"; 
+        } 
 }
