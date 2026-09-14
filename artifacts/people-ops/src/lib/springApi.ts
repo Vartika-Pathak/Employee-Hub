@@ -15,6 +15,18 @@ export function clearToken() {
   localStorage.removeItem(TOKEN_KEY);
 }
 
+const USERNAME_KEY = 'authUsername'; 
+export function getUsername(): string | null { 
+  return localStorage.getItem(USERNAME_KEY); 
+} 
+export function setUsername(username: string) { 
+  localStorage.setItem(USERNAME_KEY, username); 
+}
+
+export function clearUsername() { 
+  localStorage.removeItem(USERNAME_KEY); 
+}
+
 export type Employee = {
   id: number;
   name: string;

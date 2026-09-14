@@ -1,5 +1,5 @@
 import { useState } from 'react'; 
-import { useLogin, useRegister, setToken } from '@/lib/springApi'; 
+import { useLogin, useRegister, setToken, setUsername } from '@/lib/springApi';
 export function LoginPage({ onSuccess }: { onSuccess: () => void }) { 
     const [mode, setMode] = useState<'login' | 'register'>('login'); 
     const [username, setUsername] = useState(''); 
@@ -9,7 +9,7 @@ export function LoginPage({ onSuccess }: { onSuccess: () => void }) {
     const registerMutation = useRegister(); 
     const submit = (e: React.FormEvent) => { e.preventDefault(); setError(''); 
         const mutation = mode === 'login' ? loginMutation : registerMutation; 
-        mutation.mutate( { username, password }, { onSuccess: (data) => { setToken(data.token); onSuccess(); }, onError: () => { setError(mode === 'login' ? 'Invalid username or password' : 'Could not create account'); }, } ); }; 
+        mutation.mutate( { username, password }, { onSuccess: (data) => { setToken(data.token); setUsername(data.username); onSuccess(); }, onError: () => { setError(mode === 'login' ? 'Invalid username or password' : 'Could not create account'); }, } ); }; 
             return ( 
             <div 
             style={{ 

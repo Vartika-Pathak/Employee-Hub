@@ -9,7 +9,7 @@ import { PeopleShell } from '@/components/people-shell';
 import NotFound from '@/pages/not-found'; 
 import { Attendance, Employees, Overview, Profile, Reports, Tasks } from '@/pages/people-ops'; 
 import { LoginPage } from '@/LoginPage'; 
-import { getToken, clearToken } from '@/lib/springApi'; 
+import { getToken, clearToken, clearUsername } from '@/lib/springApi';
 import { Route, Switch, Router as WouterRouter, useLocation, } from 'wouter'; 
 
 const queryClient = new QueryClient(); function Router() { 
@@ -27,7 +27,7 @@ const queryClient = new QueryClient(); function Router() {
     return <ErrorBoundary resetKey={location}>{children}</ErrorBoundary>; 
   } 
   function App() { const [loggedIn, setLoggedIn] = useState(getToken() !== null); 
-    const logout = () => { clearToken(); setLoggedIn(false); }; 
+    const logout = () => { clearToken(); clearUsername(); setLoggedIn(false); }; 
     return ( <QueryClientProvider client={queryClient}> {loggedIn ? <TooltipProvider> <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}> <PeopleShell><Router /></PeopleShell> </WouterRouter> <button onClick={logout} style={{ position: 'fixed', bottom: 16, right: 16, padding: '8px 14px', borderRadius: 8, background: '#222', color: 'white', border: 'none', cursor: 'pointer', fontSize: 12, zIndex: 100 }} > Log out </button> <Toaster /> </TooltipProvider> : <LoginPage onSuccess={() => setLoggedIn(true)} />} </QueryClientProvider> ); 
   }
 

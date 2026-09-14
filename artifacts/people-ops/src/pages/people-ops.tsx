@@ -7,6 +7,7 @@ import {
   getGetEmployeeQueryKey,
   getGetEmployeesQueryKey,
   getGetTasksQueryKey,
+  getUsername,
   useCreateEmployee,
   useCreateEmployeeDocument,
   useCreateTask,
@@ -28,6 +29,21 @@ const cn = (...classes: Array<string | false | null | undefined>) => classes.fil
 const formatDate = (value?: string | null) => value ? new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(value)) : '—';
 const shortDate = (value?: string | null) => value ? new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(new Date(value)) : '—';
 const statusLabel = (value?: string) => (value ?? '').replaceAll('_', ' ');
+
+const getGreeting = () => {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good morning';
+  if (hour < 17) return 'Good afternoon';
+  if (hour < 19) return 'Good evening';
+  return 'Good night';
+};
+
+const getFormattedDate = () => {
+  const now = new Date();
+  const weekday = new Intl.DateTimeFormat('en-US', { weekday: 'long' }).format(now);
+  const date = new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).format(now);
+  return `${weekday} · ${date}`;
+};
 
 function Avatar({ initials, color, size = 'md' }: { initials?: string; color?: string; size?: 'sm' | 'md' | 'lg' }) {
   const styles = { sm: 'h-7 w-7 text-[9px]', md: 'h-9 w-9 text-[11px]', lg: 'h-16 w-16 text-[18px]' };
@@ -60,6 +76,7 @@ function TrendLine({ trend = [] }: { trend?: Array<{ day: string; rate: number }
 }
 
 function Overview() {
+  const username = getUsername() ?? 'there';
   const summaryQuery = useGetDashboardSummary();
   const activityQuery = useGetDashboardActivity();
   const attendanceQuery = useGetAttendanceSummary();
@@ -69,7 +86,7 @@ function Overview() {
   const tasks = (tasksQuery.data as Task[] | undefined) ?? [];
   const activity = (activityQuery.data as Activity[] | undefined) ?? [];
   return <div className="space-y-8">
-    <div className="stagger-in flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><p className="font-data text-[10px] uppercase tracking-[.2em] text-primary">Tuesday · October 8, 2024</p><h2 className="mt-2 font-display text-[34px] leading-[1.05] tracking-[-.045em] sm:text-[42px]">Good morning, Avery<span className="text-accent">.</span></h2><p className="mt-3 max-w-lg text-[13px] leading-6 text-muted-foreground">Here's the pulse of your people team. A few moments need your attention today.</p></div><Link href="/employees" className="inline-flex w-fit items-center gap-2 rounded-[10px] bg-primary px-4 py-2.5 text-[12px] font-semibold text-primary-foreground transition-transform hover:-translate-y-0.5" data-testid="link-view-people"><UsersRound size={15} /> View people</Link></div>
+    <div className="stagger-in flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><p className="font-data text-[10px] uppercase tracking-[.2em] text-primary">{getFormattedDate()}</p><h2 className="mt-2 font-display text-[34px] leading-[1.05] tracking-[-.045em] sm:text-[42px]">{getGreeting()}, {username}<span className="text-accent">.</span></h2><p className="mt-3 max-w-lg text-[13px] leading-6 text-muted-foreground">Here's the pulse of your people team. A few moments need your attention today.</p></div><Link href="/employees" className="inline-flex w-fit items-center gap-2 rounded-[10px] bg-primary px-4 py-2.5 text-[12px] font-semibold text-primary-foreground transition-transform hover:-translate-y-0.5" data-testid="link-view-people"><UsersRound size={15} /> View people</Link></div>
     {summaryQuery.isLoading ? <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{[1,2,3,4].map((x) => <LoadingBlock className="h-[150px]" key={x} />)}</div> : summaryQuery.isError ? <ErrorState onRetry={() => summaryQuery.refetch()} /> : <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 stagger-in stagger-1">
       <StatCard label="Total people" value={summary?.totalEmployees ?? '—'} change={summary?.employeeChange} icon={UsersRound} tint="teal" /><StatCard label="New hires" value={summary?.newHires ?? '—'} change={summary?.newHiresChange} icon={Sparkles} tint="gold" /><StatCard label="Attendance rate" value={summary ? `${summary.attendanceRate}%` : '—'} icon={CalendarDays} tint="coral" /><StatCard label="Open tasks" value={summary?.openTasks ?? '—'} icon={CheckCircle2} tint="ink" />
     </div>}
